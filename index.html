@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#111827"><meta name="description" content="HesamList — لیست خرید و سفر مشترک با دوستان">
+<title>HesamList — لیست‌های مشترک</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="toast" class="toast"></div>
+<section id="authView" class="auth-shell">
+  <div class="auth-decoration d1"></div><div class="auth-decoration d2"></div>
+  <div class="auth-card">
+    <div class="logo"><span>H</span><div><b>HesamList</b><small>Shared lists, made simple.</small></div></div>
+    <div class="auth-copy"><span class="eyebrow">لیست مشترک شما</span><h1 id="authTitle">همه‌چیز برای سفر و خرید، یک‌جا.</h1><p>یک لیست بساز، دوستانت را اضافه کن و همه با هم همزمان آن را کامل کنید.</p></div>
+    <div class="auth-tabs"><button class="active" data-auth="login">ورود</button><button data-auth="signup">ثبت‌نام</button></div>
+    <form id="authForm">
+      <div id="nameField" class="field hidden"><label>نام و نام خانوادگی</label><input id="displayName" autocomplete="name" placeholder="مثلاً حسام آذربو"></div>
+      <div class="field"><label>ایمیل</label><input id="email" type="email" autocomplete="email" required placeholder="you@example.com"></div>
+      <div class="field"><label>رمز عبور</label><input id="password" type="password" autocomplete="current-password" minlength="6" required placeholder="حداقل ۶ کاراکتر"></div>
+      <button class="btn primary wide" id="authSubmit">ورود به HesamList <span>←</span></button>
+    </form>
+    <p id="authMessage" class="form-message"></p>
+    <div class="auth-foot">نسخه ابری با حساب کاربری و همگام‌سازی لحظه‌ای بین گوشی و لپ‌تاپ</div>
+  </div>
+</section>
+
+<section id="appView" class="app hidden">
+<header class="topbar">
+  <div class="top-left"><button id="mobileMenu" class="icon-btn mobile-only">☰</button><div class="logo compact"><span>H</span><div><b>HesamList</b><small>لیست‌های مشترک</small></div></div></div>
+  <div class="top-actions"><button id="newListBtn" class="btn primary">+ <span class="desktop-only">لیست جدید</span></button><button id="adminBtn" class="btn soft hidden">مدیریت کاربران</button><button id="logoutBtn" class="btn ghost">خروج</button></div>
+</header>
+<div class="app-grid">
+<aside id="sidebar" class="sidebar">
+  <div class="profile"><div id="avatar" class="avatar">H</div><div class="profile-text"><b id="userName">کاربر</b><small id="userEmail">-</small></div></div>
+  <button id="allListsBtn" class="nav-head">لیست‌های من <span id="listCount">0</span></button>
+  <nav id="listNav"></nav>
+  <button id="sidebarNew" class="new-list-link">＋ ساخت لیست جدید</button>
+  <div class="sidebar-bottom"><div class="sync-dot"><i></i><span id="syncText">همگام‌سازی فعال</span></div><div>طراحی و توسعه توسط <strong>حسام آذربو</strong><br><span>Hesam Azarboo · 2026</span></div></div>
+</aside>
+<main class="main">
+  <div id="dashboard" class="dashboard">
+    <div class="welcome"><div><span class="eyebrow">داشبورد شما</span><h1>سلام، <span id="welcomeName">حسام</span> 👋</h1><p>برای شروع یک لیست خرید یا سفر بساز.</p></div><button id="welcomeNew" class="btn primary">ساخت لیست جدید</button></div>
+    <div class="stat-grid"><div class="stat"><span>کل لیست‌ها</span><b id="statLists">0</b></div><div class="stat"><span>موارد باقی‌مانده</span><b id="statOpen">0</b></div><div class="stat"><span>تکمیل‌شده</span><b id="statDone">0</b></div><div class="stat accent"><span>اعضای فعال</span><b id="statMembers">0</b></div></div>
+    <div id="dashboardLists" class="dashboard-lists"></div>
+  </div>
+  <div id="listView" class="list-view hidden">
+    <div class="list-head"><div><div class="crumb">لیست‌های من <span>›</span> <b id="listTypeLabel">سفر</b></div><div class="title-line"><span id="listIcon" class="big-icon">✈️</span><div><h1 id="listTitle">لیست سفر</h1><p id="listMeta">0 مورد</p></div></div></div><div class="head-actions"><button id="membersBtn" class="btn soft">👥 <span class="desktop-only">اعضا و دسترسی</span></button><button id="deleteListBtn" class="icon-btn danger">🗑</button></div></div>
+    <div class="list-card">
+      <div class="add-box"><input id="itemInput" placeholder="مثلاً پاسپورت، شارژر، آب..." autocomplete="off"><button id="addItemBtn" class="btn primary">افزودن</button></div>
+      <div class="filter-row"><div class="filters"><button class="filter active" data-filter="all">همه <span id="countAll">0</span></button><button class="filter" data-filter="open">باقی‌مانده <span id="countOpen">0</span></button><button class="filter" data-filter="done">انجام‌شده <span id="countDone">0</span></button></div><div class="progress-wrap"><span id="progressText">0%</span><div class="progress"><i id="progressBar"></i></div></div></div>
+      <div id="items" class="items"></div>
+      <div id="listEmpty" class="empty-list hidden"><div>✓</div><h3>این لیست هنوز خالی است</h3><p>اولین مورد را از کادر بالا اضافه کن.</p></div>
+    </div>
+  </div>
+</main>
+</div>
+</section>
+
+<div id="modal" class="modal hidden"><div class="modal-card"><button id="closeModal" class="modal-close">×</button><div id="modalContent"></div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="config.js"></script><script src="app.js"></script>
+</body></html>
