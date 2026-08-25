@@ -14,7 +14,6 @@ function internalEmail(username) {
   );
 }
 
-async function signup(username, password, name) {
 
  async function signup(username, password, name) {
 
