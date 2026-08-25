@@ -1,20 +1,25 @@
+/* =========================================================
+   HESAMLIST - APP.JS
+========================================================= */
+
 const C = window.HESAMLIST_CONFIG || {};
 
 const hasCloud = () =>
   !!(
     C.supabaseUrl &&
-    !C.supabaseUrl.includes('PASTE_') &&
+    !C.supabaseUrl.includes("PASTE_") &&
     C.supabaseAnonKey &&
-    !C.supabaseAnonKey.includes('PASTE_')
+    !C.supabaseAnonKey.includes("PASTE_")
   );
 
 let sb = null;
 let user = null;
+let profile = null;
 let lists = [];
 let active = null;
 let items = [];
-let filter = 'all';
-let authMode = 'login';
+let filter = "all";
+let authMode = "login";
 let channel = null;
 
 
@@ -25,16 +30,19 @@ let channel = null;
 const $ = id => document.getElementById(id);
 
 const esc = s =>
-  String(s ?? '').replace(/[&<>'"]/g, c => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    "'": '&#39;',
-    '"': '&quot;'
-  }[c]));
+  String(s ?? "").replace(
+    /[&<>'"]/g,
+    c => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "'": "&#39;",
+      '"': "&quot;"
+    }[c])
+  );
 
 const iconFor = type =>
-  type === 'shopping' ? '🛒' : '✈️';
+  type === "shopping" ? "🛒" : "✈️";
 
 const roleRank = {
   viewer: 1,
@@ -44,61 +52,82 @@ const roleRank = {
 };
 
 function toast(text) {
-  const x = $('toast');
+  const x = $("toast");
+
   if (!x) return;
 
   x.textContent = text;
-  x.classList.add('show');
+  x.classList.add("show");
 
   clearTimeout(window.__toast);
 
   window.__toast = setTimeout(() => {
-    x.classList.remove('show');
+    x.classList.remove("show");
   }, 2600);
 }
 
 function msg(text, ok = false) {
-  const x = $('authMessage');
+  const x = $("authMessage");
+
   if (!x) return;
 
   x.textContent = text;
   x.style.color = ok
-    ? 'var(--green)'
-    : 'var(--red)';
+    ? "var(--green)"
+    : "var(--red)";
 }
 
 function openModal(html) {
-  $('modalContent').innerHTML = html;
-  $('modal').classList.remove('hidden');
+  const content = $("modalContent");
+  const modal = $("modal");
+
+  if (!content || !modal) return;
+
+  content.innerHTML = html;
+  modal.classList.remove("hidden");
 }
 
 function closeModal() {
-  $('modal').classList.add('hidden');
+  const modal = $("modal");
+
+  if (modal) {
+    modal.classList.add("hidden");
+  }
 }
 
 function showAuth() {
-  $('authView').classList.remove('hidden');
-  $('appView').classList.add('hidden');
+  $("authView")?.classList.remove("hidden");
+  $("appView")?.classList.add("hidden");
 }
 
 function showApp() {
-  $('authView').classList.add('hidden');
-  $('appView').classList.remove('hidden');
+  $("authView")?.classList.add("hidden");
+  $("appView")?.classList.remove("hidden");
 }
+
+
+/* =========================================================
+   USER
+========================================================= */
 
 function currentName() {
   return (
+    profile?.display_name ||
     user?.user_metadata?.display_name ||
+    profile?.username ||
     user?.user_metadata?.username ||
-    user?.email?.split('@')[0] ||
-    'کاربر'
+    "کاربر"
   );
 }
 
 function roleOf() {
   return (
     active?.my_role ||
-    (active?.owner_id === user?.id ? 'owner' : 'viewer')
+    (
+      active?.owner_id === user?.id
+        ? "owner"
+        : "viewer"
+    )
   );
 }
 
@@ -112,49 +141,16 @@ function canManage() {
 
 
 /* =========================================================
-   SUPABASE
-========================================================= */
-
-function initSupabase() {
-
-  if (sb) return sb;
-
-  if (!hasCloud()) {
-    throw Error(
-      'اتصال Supabase تنظیم نشده است.'
-    );
-  }
-
-  if (
-    typeof supabase === 'undefined' ||
-    !supabase.createClient
-  ) {
-    throw Error(
-      'کتابخانه Supabase در صفحه بارگذاری نشده است.'
-    );
-  }
-
-  sb = supabase.createClient(
-    C.supabaseUrl,
-    C.supabaseAnonKey
-  );
-
-  return sb;
-}
-
-
-/* =========================================================
    USERNAME AUTH
 ========================================================= */
 
 function internalEmail(username) {
-
   return (
     username
       .trim()
       .toLowerCase()
-      .replace(/[^a-z0-9_]/g, '') +
-    '@auth.hesamlist.local'
+      .replace(/[^a-z0-9_]/g, "") +
+    "@auth.hesamlist.local"
   );
 }
 
@@ -165,7 +161,16 @@ function internalEmail(username) {
 
 async function signup(username, password, name) {
 
-  initSupabase();
+  if (!hasCloud()) {
+    throw Error("اتصال Supabase تنظیم نشده است.");
+  }
+
+  if (!sb) {
+    sb = supabase.createClient(
+      C.supabaseUrl,
+      C.supabaseAnonKey
+    );
+  }
 
   const clean =
     username
@@ -174,19 +179,19 @@ async function signup(username, password, name) {
 
   if (!/^[a-z0-9_]{3,30}$/.test(clean)) {
     throw Error(
-      'نام کاربری باید ۳ تا ۳۰ کاراکتر و فقط شامل حروف انگلیسی، عدد و _ باشد.'
+      "نام کاربری باید ۳ تا ۳۰ کاراکتر و فقط شامل حروف انگلیسی، عدد و _ باشد."
     );
   }
 
   if (!password || password.length < 6) {
     throw Error(
-      'رمز عبور باید حداقل ۶ کاراکتر باشد.'
+      "رمز عبور باید حداقل ۶ کاراکتر باشد."
     );
   }
 
   if (!name) {
     throw Error(
-      'نام و نام خانوادگی را وارد کن.'
+      "نام و نام خانوادگی را وارد کن."
     );
   }
 
@@ -195,9 +200,8 @@ async function signup(username, password, name) {
 
   const { data, error } =
     await sb.auth.signUp({
-      email: email,
-      password: password,
-
+      email,
+      password,
       options: {
         data: {
           username: clean,
@@ -214,7 +218,7 @@ async function signup(username, password, name) {
 
     const { error: profileError } =
       await sb
-        .from('profiles')
+        .from("profiles")
         .upsert({
           id: data.user.id,
           username: clean,
@@ -223,7 +227,7 @@ async function signup(username, password, name) {
 
     if (profileError) {
       console.error(
-        'Profile error:',
+        "Profile error:",
         profileError
       );
     }
@@ -239,7 +243,16 @@ async function signup(username, password, name) {
 
 async function login(username, password) {
 
-  initSupabase();
+  if (!hasCloud()) {
+    throw Error("اتصال Supabase تنظیم نشده است.");
+  }
+
+  if (!sb) {
+    sb = supabase.createClient(
+      C.supabaseUrl,
+      C.supabaseAnonKey
+    );
+  }
 
   const clean =
     username
@@ -248,29 +261,59 @@ async function login(username, password) {
 
   if (!clean) {
     throw Error(
-      'نام کاربری را وارد کن.'
+      "نام کاربری را وارد کن."
     );
   }
 
   if (!password) {
     throw Error(
-      'رمز عبور را وارد کن.'
+      "رمز عبور را وارد کن."
     );
   }
 
+  const rpcResult =
+    await sb.rpc(
+      "get_auth_email_by_username",
+      {
+        p_username: clean
+      }
+    );
+
+  if (rpcResult.error) {
+    throw rpcResult.error;
+  }
+
+  let email =
+    Array.isArray(rpcResult.data)
+      ? rpcResult.data[0]
+      : rpcResult.data;
+
   /*
-    چون ایمیل داخلی هر Username
-    به‌صورت قطعی ساخته می‌شود،
-    دیگر نیازی به RPC نیست.
+    اگر RPC مقدار را به شکل object برگرداند
   */
 
-  const email =
-    internalEmail(clean);
+  if (
+    email &&
+    typeof email === "object"
+  ) {
+    email =
+      email.email ||
+      email.auth_email ||
+      email.get_auth_email_by_username;
+  }
+
+  if (!email) {
+    /*
+      روش مستقیم برای سیستم داخلی
+    */
+
+    email = internalEmail(clean);
+  }
 
   const result =
     await sb.auth.signInWithPassword({
-      email: email,
-      password: password
+      email,
+      password
     });
 
   if (result.error) {
@@ -282,11 +325,47 @@ async function login(username, password) {
 
 
 /* =========================================================
+   PROFILE
+========================================================= */
+
+async function loadProfile() {
+
+  if (!user || user._demo || !sb) {
+    return;
+  }
+
+  const { data, error } =
+    await sb
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .maybeSingle();
+
+  if (error) {
+    console.error(
+      "Profile load error:",
+      error
+    );
+    return;
+  }
+
+  profile = data || {
+    id: user.id,
+    username:
+      user.user_metadata?.username || "",
+    display_name:
+      user.user_metadata?.display_name ||
+      "کاربر"
+  };
+}
+
+
+/* =========================================================
    DEMO MODE
 ========================================================= */
 
 function localKey() {
-  return 'hesamlist_demo_v3';
+  return "hesamlist_demo_v3";
 }
 
 function demoState() {
@@ -295,9 +374,7 @@ function demoState() {
 
     return (
       JSON.parse(
-        localStorage.getItem(
-          localKey()
-        )
+        localStorage.getItem(localKey())
       ) || {
         users: [],
         lists: [],
@@ -319,7 +396,6 @@ function demoState() {
 }
 
 function saveDemo(state) {
-
   localStorage.setItem(
     localKey(),
     JSON.stringify(state)
@@ -329,53 +405,52 @@ function saveDemo(state) {
 function demoLogin(
   username,
   name,
-  signupMode
+  isSignup,
+  password
 ) {
 
-  const state = demoState();
+  let s = demoState();
 
-  const email =
-    internalEmail(username);
+  const clean =
+    username
+      .trim()
+      .toLowerCase();
 
   let u =
-    state.users.find(
-      x => x.email === email
+    s.users.find(
+      x => x.username === clean
     );
 
-  if (signupMode) {
+  if (isSignup) {
 
     if (u) {
       throw Error(
-        'این نام کاربری قبلاً ثبت شده است.'
+        "این نام کاربری قبلاً ثبت شده است."
       );
     }
 
     u = {
       id: crypto.randomUUID(),
-      email: email,
-      username: username,
+      username: clean,
       name:
-        name ||
-        username,
-      password:
-        $('password').value
+        name || clean,
+      password
     };
 
-    state.users.push(u);
+    s.users.push(u);
 
-    if (!state.adminId) {
-      state.adminId = u.id;
+    if (!s.adminId) {
+      s.adminId = u.id;
     }
 
   } else {
 
     if (
       !u ||
-      u.password !==
-        $('password').value
+      u.password !== password
     ) {
       throw Error(
-        'نام کاربری یا رمز عبور اشتباه است.'
+        "نام کاربری یا رمز عبور اشتباه است."
       );
     }
 
@@ -383,63 +458,56 @@ function demoLogin(
 
   user = {
     id: u.id,
-    email: u.email,
-
+    email: "",
     user_metadata: {
       username: u.username,
-      display_name: u.name,
-      is_super_admin:
-        state.adminId === u.id
+      display_name: u.name
     },
-
     _demo: true
   };
 
+  profile = {
+    id: u.id,
+    username: u.username,
+    display_name: u.name
+  };
+
   localStorage.setItem(
-    'hesamlist_session',
+    "hesamlist_session",
     u.id
   );
 
-  saveDemo(state);
+  saveDemo(s);
 }
-
-
-/* =========================================================
-   DEMO LISTS
-========================================================= */
 
 function demoLists() {
 
-  const state =
-    demoState();
+  const s = demoState();
 
   lists =
-    state.lists
+    s.lists
       .filter(
         l =>
           l.owner_id === user.id ||
-          state.members.some(
+          s.members.some(
             m =>
               m.list_id === l.id &&
               m.user_id === user.id
           )
       )
       .map(l => ({
-
         ...l,
-
         my_role:
           l.owner_id === user.id
-            ? 'owner'
+            ? "owner"
             : (
-              state.members.find(
+              s.members.find(
                 m =>
                   m.list_id === l.id &&
                   m.user_id === user.id
               )?.role ||
-              'viewer'
+              "viewer"
             )
-
       }));
 }
 
@@ -450,11 +518,10 @@ function demoItems() {
     return;
   }
 
-  const state =
-    demoState();
+  const s = demoState();
 
   items =
-    state.items.filter(
+    s.items.filter(
       i =>
         i.list_id === active.id
     );
@@ -465,8 +532,7 @@ function demoCreateList(
   type
 ) {
 
-  const state =
-    demoState();
+  const s = demoState();
 
   const list = {
     id: crypto.randomUUID(),
@@ -477,19 +543,18 @@ function demoCreateList(
       new Date().toISOString()
   };
 
-  state.lists.push(list);
+  s.lists.push(list);
 
-  saveDemo(state);
+  saveDemo(s);
 
   return list;
 }
 
 function demoAddItem(name) {
 
-  const state =
-    demoState();
+  const s = demoState();
 
-  state.items.push({
+  s.items.push({
     id: crypto.randomUUID(),
     list_id: active.id,
     name,
@@ -499,7 +564,7 @@ function demoAddItem(name) {
       new Date().toISOString()
   });
 
-  saveDemo(state);
+  saveDemo(s);
 }
 
 function demoUpdateItem(
@@ -507,11 +572,10 @@ function demoUpdateItem(
   done
 ) {
 
-  const state =
-    demoState();
+  const s = demoState();
 
   const item =
-    state.items.find(
+    s.items.find(
       x => x.id === id
     );
 
@@ -519,20 +583,19 @@ function demoUpdateItem(
     item.done = done;
   }
 
-  saveDemo(state);
+  saveDemo(s);
 }
 
 function demoDeleteItem(id) {
 
-  const state =
-    demoState();
+  const s = demoState();
 
-  state.items =
-    state.items.filter(
+  s.items =
+    s.items.filter(
       x => x.id !== id
     );
 
-  saveDemo(state);
+  saveDemo(s);
 }
 
 
@@ -542,17 +605,18 @@ function demoDeleteItem(id) {
 
 async function cloudLists() {
 
-  initSupabase();
+  if (!sb || !user) {
+    throw Error(
+      "اتصال به Supabase برقرار نیست."
+    );
+  }
 
-  const {
-    data,
-    error
-  } =
+  const { data, error } =
     await sb
-      .from('lists')
-      .select('*')
+      .from("lists")
+      .select("*")
       .order(
-        'created_at',
+        "created_at",
         {
           ascending: false
         }
@@ -562,8 +626,10 @@ async function cloudLists() {
     throw error;
   }
 
+  const allLists = data || [];
+
   const ids =
-    (data || []).map(
+    allLists.map(
       x => x.id
     );
 
@@ -573,66 +639,59 @@ async function cloudLists() {
 
     const r =
       await sb
-        .from('list_members')
+        .from("list_members")
         .select(
-          'list_id,role'
+          "list_id,role"
         )
         .eq(
-          'user_id',
+          "user_id",
           user.id
         )
         .in(
-          'list_id',
+          "list_id",
           ids
         );
 
-    if (r.error) {
-      throw r.error;
+    if (!r.error) {
+
+      (r.data || [])
+        .forEach(x => {
+          roles[x.list_id] =
+            x.role;
+        });
+
     }
 
-    (r.data || [])
-      .forEach(x => {
-        roles[x.list_id] =
-          x.role;
-      });
   }
 
   lists =
-    (data || []).map(
-      l => ({
-        ...l,
-
-        my_role:
-          l.owner_id === user.id
-            ? 'owner'
-            : roles[l.id] ||
-              'viewer'
-      })
-    );
+    allLists.map(l => ({
+      ...l,
+      my_role:
+        l.owner_id === user.id
+          ? "owner"
+          : roles[l.id] ||
+            "viewer"
+    }));
 }
 
 async function cloudItems() {
 
-  initSupabase();
-
-  if (!active) {
+  if (!sb || !active) {
     items = [];
     return;
   }
 
-  const {
-    data,
-    error
-  } =
+  const { data, error } =
     await sb
-      .from('items')
-      .select('*')
+      .from("items")
+      .select("*")
       .eq(
-        'list_id',
+        "list_id",
         active.id
       )
       .order(
-        'created_at',
+        "created_at",
         {
           ascending: true
         }
@@ -642,8 +701,7 @@ async function cloudItems() {
     throw error;
   }
 
-  items =
-    data || [];
+  items = data || [];
 }
 
 
@@ -665,8 +723,7 @@ async function loadData() {
   if (
     active &&
     lists.some(
-      x =>
-        x.id === active.id
+      x => x.id === active.id
     )
   ) {
 
@@ -689,21 +746,29 @@ async function loadData() {
 
 function renderNav() {
 
-  if (!$('listCount')) return;
+  const count =
+    $("listCount");
 
-  $('listCount').textContent =
-    lists.length;
+  const nav =
+    $("listNav");
 
-  $('listNav').innerHTML =
+  if (count) {
+    count.textContent =
+      lists.length;
+  }
+
+  if (!nav) return;
+
+  nav.innerHTML =
     lists.length
-
-      ? lists.map(
+      ? lists
+        .map(
           l => `
           <button
             class="nav-item ${
               active?.id === l.id
-                ? 'active'
-                : ''
+                ? "active"
+                : ""
             }"
             data-id="${l.id}"
           >
@@ -718,14 +783,14 @@ function renderNav() {
             <span class="nav-badge">
               ${
                 roleRank[l.my_role] >= 3
-                  ? 'مدیر'
-                  : ''
+                  ? "مدیر"
+                  : ""
               }
             </span>
           </button>
         `
-        ).join('')
-
+        )
+        .join("")
       : `
         <div
           style="
@@ -739,18 +804,19 @@ function renderNav() {
       `;
 
   document
-    .querySelectorAll('.nav-item')
-    .forEach(button => {
+    .querySelectorAll(".nav-item")
+    .forEach(btn => {
 
-      button.onclick = () => {
+      btn.onclick = () => {
 
         selectList(
-          button.dataset.id
+          btn.dataset.id
         );
 
-        $('sidebar')
+        $("sidebar")
           ?.classList
-          .remove('open');
+          .remove("open");
+
       };
 
     });
@@ -768,7 +834,7 @@ function renderDashboard() {
 
   if (user?._demo) {
 
-    const state =
+    const s =
       demoState();
 
     const ids =
@@ -779,9 +845,11 @@ function renderDashboard() {
       );
 
     const its =
-      state.items.filter(
+      s.items.filter(
         i =>
-          ids.has(i.list_id)
+          ids.has(
+            i.list_id
+          )
       );
 
     open =
@@ -795,137 +863,153 @@ function renderDashboard() {
       ).length;
   }
 
-  if ($('statLists'))
-    $('statLists').textContent =
-      lists.length;
+  $("statLists") &&
+    ($("statLists").textContent =
+      lists.length);
 
-  if ($('statOpen'))
-    $('statOpen').textContent =
-      open;
+  $("statOpen") &&
+    ($("statOpen").textContent =
+      open);
 
-  if ($('statDone'))
-    $('statDone').textContent =
-      done;
+  $("statDone") &&
+    ($("statDone").textContent =
+      done);
 
-  if ($('statMembers'))
-    $('statMembers').textContent =
+  $("statMembers") &&
+    ($("statMembers").textContent =
       lists.length
-        ? lists.length
-        : 0;
+        ? Math.max(
+            1,
+            new Set(
+              lists.map(
+                x => x.owner_id
+              )
+            ).size
+          )
+        : 0);
 
-  if ($('welcomeName'))
-    $('welcomeName').textContent =
+  if ($("welcomeName")) {
+    $("welcomeName").textContent =
       currentName()
-        .split(' ')[0];
+        .split(" ")[0];
+  }
 
-  if (!$('dashboardLists'))
-    return;
+  const dashboard =
+    $("dashboardLists");
 
-  $('dashboardLists').innerHTML =
-    lists.map(l => {
+  if (!dashboard) return;
 
-      let its = [];
+  dashboard.innerHTML =
+    lists
+      .map(l => {
 
-      if (user?._demo) {
+        let its = [];
 
-        its =
-          demoState()
-            .items
-            .filter(
-              i =>
-                i.list_id === l.id
-            );
+        if (user?._demo) {
+          its =
+            demoState()
+              .items
+              .filter(
+                i =>
+                  i.list_id ===
+                  l.id
+              );
+        }
 
-      }
+        const d =
+          its.filter(
+            i => i.done
+          ).length;
 
-      const d =
-        its.filter(
-          i => i.done
-        ).length;
+        const p =
+          its.length
+            ? Math.round(
+                d /
+                its.length *
+                100
+              )
+            : 0;
 
-      const p =
-        its.length
-          ? Math.round(
-              d /
-              its.length *
-              100
-            )
-          : 0;
+        return `
+          <div
+            class="dash-card"
+            data-dash="${l.id}"
+          >
 
-      return `
-        <div
-          class="dash-card"
-          data-dash="${l.id}"
-        >
+            <div class="dash-top">
 
-          <div class="dash-top">
+              <span class="dash-icon">
+                ${iconFor(l.type)}
+              </span>
 
-            <span class="dash-icon">
-              ${iconFor(l.type)}
-            </span>
+              <div>
 
-            <div>
+                <h3>
+                  ${esc(l.title)}
+                </h3>
 
-              <h3>
-                ${esc(l.title)}
-              </h3>
+                <small>
+                  ${
+                    l.type === "shopping"
+                      ? "لیست خرید"
+                      : "وسایل سفر"
+                  }
+                  ·
+                  ${its.length}
+                  مورد
+                </small>
 
-              <small>
-                ${
-                  l.type === 'shopping'
-                    ? 'لیست خرید'
-                    : 'وسایل سفر'
-                }
-                ·
-                ${its.length}
-                مورد
-              </small>
+              </div>
+
+            </div>
+
+            <div class="dash-progress">
+
+              <div class="dash-progress-top">
+                <span>
+                  پیشرفت
+                </span>
+
+                <b>
+                  ${p}%
+                </b>
+              </div>
+
+              <div class="progress">
+                <i
+                  style="width:${p}%"
+                ></i>
+              </div>
 
             </div>
 
           </div>
+        `;
 
-          <div class="dash-progress">
-
-            <div class="dash-progress-top">
-              <span>پیشرفت</span>
-              <b>${p}%</b>
-            </div>
-
-            <div class="progress">
-              <i
-                style="width:${p}%"
-              ></i>
-            </div>
-
-          </div>
-
-        </div>
-      `;
-    }).join('');
+      })
+      .join("");
 
   document
-    .querySelectorAll('[data-dash]')
+    .querySelectorAll("[data-dash]")
     .forEach(x => {
 
-      x.onclick =
-        () =>
-          selectList(
-            x.dataset.dash
-          );
+      x.onclick = () =>
+        selectList(
+          x.dataset.dash
+        );
 
     });
 }
 
 function showDashboard() {
 
-  $('dashboard')
+  $("dashboard")
     ?.classList
-    .remove('hidden');
+    .remove("hidden");
 
-  $('listView')
+  $("listView")
     ?.classList
-    .add('hidden');
+    .add("hidden");
 
   renderNav();
   renderDashboard();
@@ -945,14 +1029,14 @@ async function selectList(id) {
 
   if (!active) return;
 
-  filter = 'all';
+  filter = "all";
 
   document
-    .querySelectorAll('.filter')
+    .querySelectorAll(".filter")
     .forEach(x =>
       x.classList.toggle(
-        'active',
-        x.dataset.filter === 'all'
+        "active",
+        x.dataset.filter === "all"
       )
     );
 
@@ -962,31 +1046,33 @@ async function selectList(id) {
     await cloudItems();
   }
 
-  $('dashboard')
+  $("dashboard")
     ?.classList
-    .add('hidden');
+    .add("hidden");
 
-  $('listView')
+  $("listView")
     ?.classList
-    .remove('hidden');
+    .remove("hidden");
 
-  if ($('listTitle'))
-    $('listTitle').textContent =
+  if ($("listTitle")) {
+    $("listTitle").textContent =
       active.title;
+  }
 
-  if ($('listTypeLabel'))
-    $('listTypeLabel').textContent =
-      active.type === 'shopping'
-        ? 'خرید'
-        : 'سفر';
+  if ($("listTypeLabel")) {
+    $("listTypeLabel").textContent =
+      active.type === "shopping"
+        ? "خرید"
+        : "سفر";
+  }
 
-  if ($('listIcon'))
-    $('listIcon').textContent =
+  if ($("listIcon")) {
+    $("listIcon").textContent =
       iconFor(active.type);
+  }
 
   renderNav();
   renderItems();
-
   subscribe();
 }
 
@@ -996,8 +1082,6 @@ async function selectList(id) {
 ========================================================= */
 
 function renderItems() {
-
-  if (!active) return;
 
   const all =
     items.length;
@@ -1019,196 +1103,192 @@ function renderItems() {
         )
       : 0;
 
-  if ($('countAll'))
-    $('countAll').textContent =
-      all;
+  $("countAll") &&
+    ($("countAll").textContent =
+      all);
 
-  if ($('countOpen'))
-    $('countOpen').textContent =
-      open;
+  $("countOpen") &&
+    ($("countOpen").textContent =
+      open);
 
-  if ($('countDone'))
-    $('countDone').textContent =
-      done;
+  $("countDone") &&
+    ($("countDone").textContent =
+      done);
 
-  if ($('progressText'))
-    $('progressText').textContent =
-      p + '%';
+  $("progressText") &&
+    ($("progressText").textContent =
+      p + "%");
 
-  if ($('progressBar'))
-    $('progressBar').style.width =
-      p + '%';
+  $("progressBar") &&
+    ($("progressBar").style.width =
+      p + "%");
 
-  if ($('listMeta'))
-    $('listMeta').textContent =
-      `${all} مورد · ${done} مورد انجام شده`;
+  $("listMeta") &&
+    ($("listMeta").textContent =
+      `${all} مورد · ${done} مورد انجام شده`);
 
-  $('listEmpty')
+  $("listEmpty")
     ?.classList
     .toggle(
-      'hidden',
+      "hidden",
       all !== 0
     );
 
   let visible =
-    filter === 'open'
+    filter === "open"
       ? items.filter(
           i => !i.done
         )
-      : filter === 'done'
+      : filter === "done"
         ? items.filter(
             i => i.done
           )
         : items;
 
-  if ($('items')) {
+  const container =
+    $("items");
 
-    $('items').innerHTML =
-      visible.map(
+  if (!container) return;
+
+  container.innerHTML =
+    visible
+      .map(
         i => `
-
-        <div
-          class="item ${
-            i.done
-              ? 'done'
-              : ''
-          }"
-        >
-
-          <button
-            class="check ${
+          <div
+            class="item ${
               i.done
-                ? 'done'
-                : ''
+                ? "done"
+                : ""
             }"
-            data-check="${i.id}"
+          >
+
+            <button
+              class="check ${
+                i.done
+                  ? "done"
+                  : ""
+              }"
+              data-check="${i.id}"
+              ${
+                canEdit()
+                  ? ""
+                  : "disabled"
+              }
+            >
+              ${
+                i.done
+                  ? "✓"
+                  : ""
+              }
+            </button>
+
+            <span class="item-name">
+              ${esc(i.name)}
+            </span>
+
+            <span class="item-meta">
+              ${
+                i.created_at
+                  ? new Date(
+                      i.created_at
+                    ).toLocaleDateString(
+                      "fa-IR"
+                    )
+                  : ""
+              }
+            </span>
+
             ${
               canEdit()
-                ? ''
-                : 'disabled'
+                ? `
+                  <button
+                    class="item-delete"
+                    data-delete="${i.id}"
+                  >
+                    حذف
+                  </button>
+                `
+                : ""
             }
-          >
-            ${
-              i.done
-                ? '✓'
-                : ''
-            }
-          </button>
 
-          <span class="item-name">
-            ${esc(i.name)}
-          </span>
+          </div>
+        `
+      )
+      .join("");
 
-          <span class="item-meta">
-            ${
-              i.created_at
-                ? new Date(
-                    i.created_at
-                  ).toLocaleDateString(
-                    'fa-IR'
-                  )
-                : ''
-            }
-          </span>
+  document
+    .querySelectorAll(
+      "[data-check]"
+    )
+    .forEach(btn => {
 
-          ${
-            canEdit()
-              ? `
-                <button
-                  class="item-delete"
-                  data-delete="${i.id}"
-                >
-                  حذف
-                </button>
-              `
-              : ''
-          }
+      btn.onclick = () =>
+        toggleItem(
+          btn.dataset.check
+        );
 
-        </div>
+    });
 
-      `
-      ).join('');
+  document
+    .querySelectorAll(
+      "[data-delete]"
+    )
+    .forEach(btn => {
 
+      btn.onclick = () =>
+        deleteItem(
+          btn.dataset.delete
+        );
+
+    });
+
+  if ($("addItemBtn")) {
+    $("addItemBtn").disabled =
+      !canEdit();
   }
 
-  document
-    .querySelectorAll(
-      '[data-check]'
-    )
-    .forEach(
-      b =>
-        b.onclick =
-          () =>
-            toggleItem(
-              b.dataset.check
-            )
-    );
+  if ($("itemInput")) {
 
-  document
-    .querySelectorAll(
-      '[data-delete]'
-    )
-    .forEach(
-      b =>
-        b.onclick =
-          () =>
-            deleteItem(
-              b.dataset.delete
-            )
-    );
-
-  if ($('addItemBtn'))
-    $('addItemBtn').disabled =
+    $("itemInput").disabled =
       !canEdit();
 
-  if ($('itemInput')) {
-
-    $('itemInput').disabled =
-      !canEdit();
-
-    $('itemInput').placeholder =
+    $("itemInput").placeholder =
       canEdit()
-        ? 'مثلاً پاسپورت، شارژر، آب...'
-        : 'شما فقط دسترسی مشاهده دارید.';
+        ? "مثلاً پاسپورت، شارژر، آب..."
+        : "شما فقط دسترسی مشاهده دارید.";
 
   }
 }
 
-
-/* =========================================================
-   ADD ITEM
-========================================================= */
-
 async function addItem() {
 
-  if (!active || !canEdit())
-    return;
-
   const input =
-    $('itemInput');
+    $("itemInput");
 
   if (!input) return;
 
   const name =
     input.value.trim();
 
-  if (!name) return;
+  if (
+    !name ||
+    !active ||
+    !canEdit()
+  ) {
+    return;
+  }
 
   try {
 
-    if (user._demo) {
+    if (user?._demo) {
 
       demoAddItem(name);
 
     } else {
 
-      initSupabase();
-
-      const {
-        error
-      } =
+      const { error } =
         await sb
-          .from('items')
+          .from("items")
           .insert({
             list_id:
               active.id,
@@ -1217,36 +1297,33 @@ async function addItem() {
               user.id
           });
 
-      if (error)
+      if (error) {
         throw error;
+      }
+
     }
 
-    input.value = '';
+    input.value = "";
 
     await refreshItems();
 
     toast(
-      'مورد اضافه شد'
+      "مورد اضافه شد"
     );
 
   } catch (e) {
 
     toast(
       e.message ||
-      'خطا در افزودن مورد'
+      "خطا در افزودن مورد"
     );
 
   }
 }
 
-
-/* =========================================================
-   REFRESH ITEMS
-========================================================= */
-
 async function refreshItems() {
 
-  if (user._demo) {
+  if (user?._demo) {
     demoItems();
   } else {
     await cloudItems();
@@ -1256,15 +1333,9 @@ async function refreshItems() {
   renderDashboard();
 }
 
-
-/* =========================================================
-   TOGGLE ITEM
-========================================================= */
-
 async function toggleItem(id) {
 
-  if (!canEdit())
-    return;
+  if (!canEdit()) return;
 
   const item =
     items.find(
@@ -1275,7 +1346,7 @@ async function toggleItem(id) {
 
   try {
 
-    if (user._demo) {
+    if (user?._demo) {
 
       demoUpdateItem(
         id,
@@ -1284,22 +1355,22 @@ async function toggleItem(id) {
 
     } else {
 
-      const {
-        error
-      } =
+      const { error } =
         await sb
-          .from('items')
+          .from("items")
           .update({
             done:
               !item.done
           })
           .eq(
-            'id',
+            "id",
             id
           );
 
-      if (error)
+      if (error) {
         throw error;
+      }
+
     }
 
     await refreshItems();
@@ -1308,63 +1379,58 @@ async function toggleItem(id) {
 
     toast(
       e.message ||
-      'خطا'
+      "خطا"
     );
 
   }
 }
 
-
-/* =========================================================
-   DELETE ITEM
-========================================================= */
-
 async function deleteItem(id) {
 
-  if (!canEdit())
-    return;
+  if (!canEdit()) return;
 
   if (
     !confirm(
-      'این مورد حذف شود؟'
+      "این مورد حذف شود؟"
     )
-  )
+  ) {
     return;
+  }
 
   try {
 
-    if (user._demo) {
+    if (user?._demo) {
 
       demoDeleteItem(id);
 
     } else {
 
-      const {
-        error
-      } =
+      const { error } =
         await sb
-          .from('items')
+          .from("items")
           .delete()
           .eq(
-            'id',
+            "id",
             id
           );
 
-      if (error)
+      if (error) {
         throw error;
+      }
+
     }
 
     await refreshItems();
 
     toast(
-      'مورد حذف شد'
+      "مورد حذف شد"
     );
 
   } catch (e) {
 
     toast(
       e.message ||
-      'خطا'
+      "خطا"
     );
 
   }
@@ -1378,7 +1444,6 @@ async function deleteItem(id) {
 async function createList() {
 
   openModal(`
-
     <h2>
       ساخت لیست جدید
     </h2>
@@ -1388,7 +1453,6 @@ async function createList() {
     </p>
 
     <div class="field">
-
       <label>
         نام لیست
       </label>
@@ -1397,12 +1461,9 @@ async function createList() {
         id="newTitle"
         placeholder="مثلاً سفر شمال ۱۴۰۵"
       >
-
     </div>
 
-    <div
-      class="type-grid"
-    >
+    <div class="type-grid">
 
       <button
         class="type-choice active"
@@ -1412,6 +1473,7 @@ async function createList() {
         <b>
           وسایل سفر
         </b>
+
         <small>
           چمدان، مدارک، لباس و...
         </small>
@@ -1425,6 +1487,7 @@ async function createList() {
         <b>
           خرید
         </b>
+
         <small>
           خرید خانه، مهمانی و...
         </small>
@@ -1438,55 +1501,55 @@ async function createList() {
     >
       ساخت لیست
     </button>
-
   `);
 
   document
     .querySelectorAll(
-      '.type-choice'
+      ".type-choice"
     )
-    .forEach(
-      b =>
-        b.onclick =
-          () => {
+    .forEach(btn => {
 
-            document
-              .querySelectorAll(
-                '.type-choice'
+      btn.onclick = () => {
+
+        document
+          .querySelectorAll(
+            ".type-choice"
+          )
+          .forEach(
+            x =>
+              x.classList.remove(
+                "active"
               )
-              .forEach(
-                x =>
-                  x.classList
-                    .remove(
-                      'active'
-                    )
-              );
+          );
 
-            b.classList
-              .add('active');
+        btn.classList.add(
+          "active"
+        );
 
-          }
-    );
+      };
 
-  $('createConfirm').onclick =
+    });
+
+  $("createConfirm").onclick =
     async () => {
 
       const title =
-        $('newTitle')
-          .value
-          .trim();
+        $("newTitle")
+          ?.value
+          ?.trim();
+
+      const selected =
+        document.querySelector(
+          ".type-choice.active"
+        );
 
       const type =
-        document
-          .querySelector(
-            '.type-choice.active'
-          )
-          .dataset
-          .type;
+        selected?.dataset.type ||
+        "travel";
 
       if (!title) {
         return toast(
-          'نام لیست را وارد کن'
+          "نام لیست را وارد کن"
         );
       }
 
@@ -1494,7 +1557,7 @@ async function createList() {
 
         let list;
 
-        if (user._demo) {
+        if (user?._demo) {
 
           list =
             demoCreateList(
@@ -1506,11 +1569,9 @@ async function createList() {
 
         } else {
 
-          initSupabase();
-
           const result =
             await sb
-              .from('lists')
+              .from("lists")
               .insert({
                 title,
                 type,
@@ -1520,11 +1581,13 @@ async function createList() {
               .select()
               .single();
 
-          if (result.error)
+          if (result.error) {
             throw result.error;
+          }
 
           list =
             result.data;
+
         }
 
         closeModal();
@@ -1536,14 +1599,14 @@ async function createList() {
         );
 
         toast(
-          'لیست ساخته شد'
+          "لیست ساخته شد"
         );
 
       } catch (e) {
 
         toast(
           e.message ||
-          'خطا در ساخت لیست'
+          "خطا در ساخت لیست"
         );
 
       }
@@ -1558,58 +1621,61 @@ async function createList() {
 
 async function deleteList() {
 
-  if (!active)
-    return;
+  if (!active) return;
 
   if (
     !confirm(
       `لیست «${active.title}» حذف شود؟ این کار قابل بازگشت نیست.`
     )
-  )
+  ) {
     return;
+  }
 
   try {
 
-    if (user._demo) {
+    if (user?._demo) {
 
-      const state =
+      let s =
         demoState();
 
-      state.lists =
-        state.lists.filter(
+      s.lists =
+        s.lists.filter(
           x =>
-            x.id !== active.id
+            x.id !==
+            active.id
         );
 
-      state.items =
-        state.items.filter(
+      s.items =
+        s.items.filter(
           x =>
-            x.list_id !== active.id
+            x.list_id !==
+            active.id
         );
 
-      state.members =
-        state.members.filter(
+      s.members =
+        s.members.filter(
           x =>
-            x.list_id !== active.id
+            x.list_id !==
+            active.id
         );
 
-      saveDemo(state);
+      saveDemo(s);
 
     } else {
 
-      initSupabase();
-
       const result =
         await sb
-          .from('lists')
+          .from("lists")
           .delete()
           .eq(
-            'id',
+            "id",
             active.id
           );
 
-      if (result.error)
+      if (result.error) {
         throw result.error;
+      }
+
     }
 
     active = null;
@@ -1617,14 +1683,14 @@ async function deleteList() {
     await loadData();
 
     toast(
-      'لیست حذف شد'
+      "لیست حذف شد"
     );
 
   } catch (e) {
 
     toast(
       e.message ||
-      'خطا'
+      "خطا"
     );
 
   }
@@ -1637,14 +1703,13 @@ async function deleteList() {
 
 async function membersModal() {
 
-  if (!active)
-    return;
+  if (!active) return;
 
   let members = [];
 
-  if (user._demo) {
+  if (user?._demo) {
 
-    const state =
+    const s =
       demoState();
 
     members = [
@@ -1652,60 +1717,57 @@ async function membersModal() {
         user_id:
           user.id,
         role:
-          'owner',
+          "owner",
         profile:
-          state.users.find(
+          s.users.find(
             u =>
               u.id === user.id
           )
       },
 
-      ...state.members
+      ...s.members
         .filter(
           m =>
             m.list_id ===
             active.id
         )
-        .map(
-          m => ({
-            user_id:
-              m.user_id,
-            role:
-              m.role,
-            profile:
-              state.users.find(
-                u =>
-                  u.id ===
-                  m.user_id
-              )
-          })
-        )
+        .map(m => ({
+          user_id:
+            m.user_id,
+          role:
+            m.role,
+          profile:
+            s.users.find(
+              u =>
+                u.id ===
+                m.user_id
+            )
+        }))
     ];
 
   } else {
 
-    initSupabase();
-
     const result =
       await sb
-        .from('list_members')
+        .from("list_members")
         .select(
-          'user_id,role,profiles(id,display_name,username)'
+          "user_id,role,profiles(id,display_name)"
         )
         .eq(
-          'list_id',
+          "list_id",
           active.id
         );
 
-    if (result.error)
+    if (result.error) {
       throw result.error;
+    }
 
     members =
       result.data || [];
+
   }
 
   openModal(`
-
     <h2>
       اعضا و دسترسی
     </h2>
@@ -1721,6 +1783,7 @@ async function membersModal() {
 
             <input
               id="inviteEmail"
+              type="email"
               placeholder="ایمیل دوستت"
             >
 
@@ -1733,7 +1796,7 @@ async function membersModal() {
 
           </div>
         `
-        : ''
+        : ""
     }
 
     <div
@@ -1746,34 +1809,32 @@ async function membersModal() {
             m =>
               memberHtml(m)
           )
-          .join('')
+          .join("")
       }
     </div>
-
   `);
 
   if (canManage()) {
 
-    $('inviteBtn').onclick =
-      () =>
-        inviteMember();
+    $("inviteBtn").onclick =
+      inviteMember;
 
-  }
+    document
+      .querySelectorAll(
+        "[data-member-role]"
+      )
+      .forEach(select => {
 
-  document
-    .querySelectorAll(
-      '[data-member-role]'
-    )
-    .forEach(
-      select =>
         select.onchange =
           () =>
             changeRole(
-              select.dataset
-                .memberRole,
+              select.dataset.memberRole,
               select.value
-            )
-    );
+            );
+
+      });
+
+  }
 }
 
 function memberHtml(m) {
@@ -1781,19 +1842,21 @@ function memberHtml(m) {
   const name =
     m.profile?.display_name ||
     m.profile?.username ||
-    m.user_id?.slice(0, 8) ||
-    'کاربر';
+    m.user_id?.slice(
+      0,
+      8
+    ) ||
+    "کاربر";
 
   return `
-
     <div class="member">
 
       <div class="member-main">
 
         <div class="mini-avatar">
           ${esc(
-            name[0] ||
-            'U'
+            name?.[0] ||
+            "U"
           )}
         </div>
 
@@ -1802,12 +1865,13 @@ function memberHtml(m) {
           <div class="member-name">
             ${esc(name)}
             ${
-              m.user_id ===
-              user.id
-                ? '(شما)'
-                : ''
+              m.user_id === user?.id
+                ? "(شما)"
+                : ""
             }
           </div>
+
+          <!-- ایمیل عمداً نمایش داده نمی‌شود -->
 
         </div>
 
@@ -1819,7 +1883,6 @@ function memberHtml(m) {
           active.owner_id
 
           ? `
-
             <select
               class="role-select"
               data-member-role="${m.user_id}"
@@ -1828,10 +1891,9 @@ function memberHtml(m) {
               <option
                 value="editor"
                 ${
-                  m.role ===
-                  'editor'
-                    ? 'selected'
-                    : ''
+                  m.role === "editor"
+                    ? "selected"
+                    : ""
                 }
               >
                 ویرایشگر
@@ -1840,10 +1902,9 @@ function memberHtml(m) {
               <option
                 value="viewer"
                 ${
-                  m.role ===
-                  'viewer'
-                    ? 'selected'
-                    : ''
+                  m.role === "viewer"
+                    ? "selected"
+                    : ""
                 }
               >
                 فقط مشاهده
@@ -1852,33 +1913,29 @@ function memberHtml(m) {
               <option
                 value="admin"
                 ${
-                  m.role ===
-                  'admin'
-                    ? 'selected'
-                    : ''
+                  m.role === "admin"
+                    ? "selected"
+                    : ""
                 }
               >
                 مدیر
               </option>
 
             </select>
-
           `
 
           : `
-
             <span class="role-select">
               ${
-                m.role === 'owner'
-                  ? 'مالک'
-                  : m.role === 'admin'
-                    ? 'مدیر'
-                    : m.role === 'editor'
-                      ? 'ویرایشگر'
-                      : 'مشاهده'
+                m.role === "owner"
+                  ? "مالک"
+                  : m.role === "admin"
+                    ? "مدیر"
+                    : m.role === "editor"
+                      ? "ویرایشگر"
+                      : "مشاهده"
               }
             </span>
-
           `
       }
 
@@ -1886,18 +1943,12 @@ function memberHtml(m) {
   `;
 }
 
-
-/* =========================================================
-   INVITE MEMBER
-========================================================= */
-
 async function inviteMember() {
 
   const input =
-    $('inviteEmail');
+    $("inviteEmail");
 
-  if (!input)
-    return;
+  if (!input) return;
 
   const email =
     input.value
@@ -1906,31 +1957,31 @@ async function inviteMember() {
 
   if (!email) {
     return toast(
-      'ایمیل را وارد کن'
+      "ایمیل را وارد کن"
     );
   }
 
   try {
 
-    if (user._demo) {
+    if (user?._demo) {
 
-      const state =
+      let s =
         demoState();
 
       const u =
-        state.users.find(
+        s.users.find(
           x =>
             x.email === email
         );
 
       if (!u) {
         throw Error(
-          'این کاربر هنوز حسابی در نسخه آزمایشی ندارد.'
+          "این کاربر هنوز حساب نساخته است."
         );
       }
 
       if (
-        state.members.some(
+        s.members.some(
           m =>
             m.list_id ===
               active.id &&
@@ -1941,44 +1992,44 @@ async function inviteMember() {
           active.owner_id
       ) {
         throw Error(
-          'این کاربر از قبل عضو است.'
+          "این کاربر از قبل عضو است."
         );
       }
 
-      state.members.push({
+      s.members.push({
         list_id:
           active.id,
         user_id:
           u.id,
         role:
-          'editor'
+          "editor"
       });
 
-      saveDemo(state);
+      saveDemo(s);
 
     } else {
 
-      initSupabase();
-
       const result =
         await sb.rpc(
-          'add_list_member_by_email',
+          "add_list_member_by_email",
           {
             p_list_id:
               active.id,
             p_email:
               email,
             p_role:
-              'editor'
+              "editor"
           }
         );
 
-      if (result.error)
+      if (result.error) {
         throw result.error;
+      }
+
     }
 
     toast(
-      'عضو اضافه شد'
+      "عضو اضافه شد"
     );
 
     await membersModal();
@@ -1987,16 +2038,11 @@ async function inviteMember() {
 
     toast(
       e.message ||
-      'خطا در افزودن عضو'
+      "خطا در افزودن عضو"
     );
 
   }
 }
-
-
-/* =========================================================
-   CHANGE ROLE
-========================================================= */
 
 async function changeRole(
   uid,
@@ -2005,13 +2051,13 @@ async function changeRole(
 
   try {
 
-    if (user._demo) {
+    if (user?._demo) {
 
-      const state =
+      let s =
         demoState();
 
       const member =
-        state.members.find(
+        s.members.find(
           x =>
             x.list_id ===
               active.id &&
@@ -2019,44 +2065,45 @@ async function changeRole(
               uid
         );
 
-      if (member)
+      if (member) {
         member.role =
           role;
+      }
 
-      saveDemo(state);
+      saveDemo(s);
 
     } else {
 
-      initSupabase();
-
       const result =
         await sb
-          .from('list_members')
+          .from("list_members")
           .update({
             role
           })
           .eq(
-            'list_id',
+            "list_id",
             active.id
           )
           .eq(
-            'user_id',
+            "user_id",
             uid
           );
 
-      if (result.error)
+      if (result.error) {
         throw result.error;
+      }
+
     }
 
     toast(
-      'سطح دسترسی تغییر کرد'
+      "سطح دسترسی تغییر کرد"
     );
 
   } catch (e) {
 
     toast(
       e.message ||
-      'خطا'
+      "خطا"
     );
 
   }
@@ -2069,42 +2116,40 @@ async function changeRole(
 
 async function adminModal() {
 
-  if (!user)
-    return;
+  if (!user) return;
 
   let users = [];
 
-  if (user._demo) {
+  if (user?._demo) {
 
     users =
       demoState().users;
 
   } else {
 
-    initSupabase();
-
     const result =
       await sb
-        .from('profiles')
+        .from("profiles")
         .select(
-          'id,display_name,username,created_at'
+          "id,username,display_name,created_at"
         )
         .order(
-          'created_at',
+          "created_at",
           {
-            ascending: false
+            ascending:
+              false
           }
         );
 
-    if (result.error)
+    if (result.error) {
       throw result.error;
+    }
 
     users =
       result.data || [];
   }
 
   openModal(`
-
     <h2>
       مدیریت کاربران
     </h2>
@@ -2119,7 +2164,6 @@ async function adminModal() {
         users
           .map(
             u => `
-
               <div class="member">
 
                 <div class="member-main">
@@ -2129,7 +2173,7 @@ async function adminModal() {
                       (
                         u.display_name ||
                         u.username ||
-                        'U'
+                        "U"
                       )[0]
                     )}
                   </div>
@@ -2140,25 +2184,17 @@ async function adminModal() {
                       ${esc(
                         u.display_name ||
                         u.username ||
-                        'کاربر'
+                        "کاربر"
                       )}
 
                       ${
-                        u.id ===
-                        user.id
-                          ? '(شما)'
-                          : ''
+                        u.id === user.id
+                          ? " (شما)"
+                          : ""
                       }
                     </div>
 
-                    <div class="member-email">
-                      ${
-                        esc(
-                          u.username ||
-                          ''
-                        )
-                      }
-                    </div>
+                    <!-- ایمیل عمداً نمایش داده نمی‌شود -->
 
                   </div>
 
@@ -2166,22 +2202,19 @@ async function adminModal() {
 
                 <span class="role-select">
                   ${
-                    u.id ===
-                    user.id
-                      ? 'حساب شما'
-                      : 'کاربر'
+                    u.id === user.id
+                      ? "حساب شما"
+                      : "کاربر"
                   }
                 </span>
 
               </div>
-
             `
           )
-          .join('')
+          .join("")
       }
 
     </div>
-
   `);
 }
 
@@ -2196,8 +2229,9 @@ function subscribe() {
     user?._demo ||
     !sb ||
     !active
-  )
+  ) {
     return;
+  }
 
   if (channel) {
     sb.removeChannel(
@@ -2208,26 +2242,33 @@ function subscribe() {
   channel =
     sb
       .channel(
-        'hesamlist-' +
+        "hesamlist-" +
         active.id
       )
       .on(
-        'postgres_changes',
+        "postgres_changes",
         {
-          event: '*',
-          schema: 'public',
-          table: 'items',
+          event: "*",
+          schema: "public",
+          table: "items",
           filter:
-            'list_id=eq.' +
+            "list_id=eq." +
             active.id
         },
         async () => {
 
-          await cloudItems();
+          try {
 
-          renderItems();
+            await cloudItems();
 
-          renderDashboard();
+            renderItems();
+            renderDashboard();
+
+          } catch (e) {
+
+            console.error(e);
+
+          }
 
         }
       )
@@ -2241,14 +2282,43 @@ function subscribe() {
 
 async function bootCloud() {
 
-  initSupabase();
+  if (
+    !hasCloud()
+  ) {
+    bootDemo();
+    return;
+  }
+
+  if (
+    typeof supabase ===
+    "undefined"
+  ) {
+
+    console.error(
+      "Supabase library not loaded."
+    );
+
+    msg(
+      "کتابخانه Supabase بارگذاری نشده است."
+    );
+
+    return;
+  }
+
+  sb =
+    supabase.createClient(
+      C.supabaseUrl,
+      C.supabaseAnonKey
+    );
 
   const {
     data
   } =
     await sb.auth.getSession();
 
-  if (data?.session) {
+  if (
+    data?.session
+  ) {
 
     user =
       data.session.user;
@@ -2267,12 +2337,6 @@ async function bootCloud() {
       session
     ) => {
 
-      if (
-        event ===
-        'INITIAL_SESSION'
-      )
-        return;
-
       if (session) {
 
         user =
@@ -2283,6 +2347,7 @@ async function bootCloud() {
       } else {
 
         user = null;
+        profile = null;
 
         showAuth();
 
@@ -2299,32 +2364,65 @@ async function bootCloud() {
 
 async function startApp() {
 
+  if (!user) {
+    return;
+  }
+
   showApp();
 
-  if ($('userName'))
-    $('userName').textContent =
+  /*
+    دریافت پروفایل
+  */
+
+  if (!user._demo) {
+    await loadProfile();
+  }
+
+  /*
+    نام کاربر
+    ایمیل عمداً اینجا نمایش داده نمی‌شود.
+  */
+
+  if ($("userName")) {
+    $("userName").textContent =
       currentName();
+  }
 
-  if ($('userEmail'))
-    $('userEmail').textContent =
-      user?.email || '';
+  if ($("userEmail")) {
 
-  if ($('avatar'))
-    $('avatar').textContent =
+    /*
+      ایمیل داخلی حذف شد
+    */
+
+    $("userEmail").textContent =
+      "";
+
+    $("userEmail").classList.add(
+      "hidden"
+    );
+
+  }
+
+  if ($("avatar")) {
+
+    $("avatar").textContent =
       currentName()
+        .trim()
         .charAt(0)
         .toUpperCase() ||
-      'H';
+      "H";
 
-  if ($('adminBtn')) {
+  }
 
-    $('adminBtn')
+  if ($("adminBtn")) {
+
+    $("adminBtn")
       .classList
       .toggle(
-        'hidden',
+        "hidden",
+        !user?._demo &&
         user?.user_metadata
-          ?.is_super_admin !== true &&
-        !user?._demo
+          ?.is_super_admin !== true
       );
 
   }
@@ -2339,7 +2437,7 @@ async function startApp() {
 
     toast(
       e.message ||
-      'خطا در دریافت اطلاعات'
+      "خطا در دریافت اطلاعات"
     );
 
   }
@@ -2354,16 +2452,16 @@ function bootDemo() {
 
   const sid =
     localStorage.getItem(
-      'hesamlist_session'
+      "hesamlist_session"
     );
 
   if (sid) {
 
-    const state =
+    const s =
       demoState();
 
     const u =
-      state.users.find(
+      s.users.find(
         x =>
           x.id === sid
       );
@@ -2372,19 +2470,22 @@ function bootDemo() {
 
       user = {
         id: u.id,
-        email: u.email,
-
+        email: "",
         user_metadata: {
           username:
             u.username,
           display_name:
-            u.name,
-          is_super_admin:
-            state.adminId ===
-            u.id
+            u.name
         },
-
         _demo: true
+      };
+
+      profile = {
+        id: u.id,
+        username:
+          u.username,
+        display_name:
+          u.name
       };
 
       startApp();
@@ -2395,9 +2496,10 @@ function bootDemo() {
 
   showAuth();
 
-  if ($('syncText'))
-    $('syncText').textContent =
-      'حالت آزمایشی محلی';
+  if ($("syncText")) {
+    $("syncText").textContent =
+      "حالت آزمایشی محلی";
+  }
 }
 
 
@@ -2405,74 +2507,71 @@ function bootDemo() {
    AUTH FORM
 ========================================================= */
 
-if ($('authForm')) {
+if ($("authForm")) {
 
-  $('authForm').onsubmit =
+  $("authForm").onsubmit =
     async e => {
 
       e.preventDefault();
 
       const username =
-        $('username')
+        $("username")
           ?.value
           ?.trim()
           ?.toLowerCase() ||
-        '';
+        "";
 
       const password =
-        $('password')
+        $("password")
           ?.value ||
-        '';
+        "";
 
       const name =
-        $('displayName')
+        $("displayName")
           ?.value
           ?.trim() ||
-        '';
+        "";
 
       try {
 
         if (!username) {
           throw Error(
-            'نام کاربری را وارد کن.'
+            "نام کاربری را وارد کن."
           );
         }
 
         if (!password) {
           throw Error(
-            'رمز عبور را وارد کن.'
+            "رمز عبور را وارد کن."
           );
         }
 
-        if (
-          password.length < 6
-        ) {
-          throw Error(
-            'رمز عبور باید حداقل ۶ کاراکتر باشد.'
-          );
-        }
-
-        if (
-          authMode ===
-          'signup' &&
-          !name
-        ) {
-          throw Error(
-            'نام و نام خانوادگی را وارد کن.'
-          );
-        }
-
-
-        /* CLOUD */
+        /*
+          CLOUD
+        */
 
         if (hasCloud()) {
 
-          initSupabase();
+          if (!sb) {
+
+            sb =
+              supabase.createClient(
+                C.supabaseUrl,
+                C.supabaseAnonKey
+              );
+
+          }
 
           if (
             authMode ===
-            'signup'
+            "signup"
           ) {
+
+            if (!name) {
+              throw Error(
+                "نام و نام خانوادگی را وارد کن."
+              );
+            }
 
             const result =
               await signup(
@@ -2486,7 +2585,7 @@ if ($('authForm')) {
             ) {
 
               msg(
-                'حساب ساخته شد. اگر تأیید ایمیل فعال باشد، باید ایمیل را تأیید کنی.',
+                "حساب ساخته شد. اگر تأیید ایمیل فعال است، باید Email Confirmation را در Supabase خاموش کنیم.",
                 true
               );
 
@@ -2497,7 +2596,7 @@ if ($('authForm')) {
               result.user;
 
             toast(
-              'حساب ساخته شد'
+              "حساب ساخته شد"
             );
 
             await startApp();
@@ -2514,16 +2613,18 @@ if ($('authForm')) {
               result.data.user;
 
             toast(
-              'خوش آمدی'
+              "خوش آمدی"
             );
 
             await startApp();
+
           }
 
         }
 
-
-        /* DEMO */
+        /*
+          DEMO
+        */
 
         else {
 
@@ -2531,24 +2632,27 @@ if ($('authForm')) {
             username,
             name,
             authMode ===
-              'signup'
+              "signup",
+            password
           );
 
           await startApp();
 
           toast(
-            'وارد شدید'
+            "وارد شدید"
           );
 
         }
 
       } catch (e) {
 
-        console.error(e);
+        console.error(
+          e
+        );
 
         msg(
           e.message ||
-          'عملیات ناموفق بود'
+          "عملیات ناموفق بود"
         );
 
       }
@@ -2564,7 +2668,7 @@ if ($('authForm')) {
 
 document
   .querySelectorAll(
-    '[data-auth]'
+    "[data-auth]"
   )
   .forEach(btn => {
 
@@ -2575,54 +2679,51 @@ document
 
       document
         .querySelectorAll(
-          '[data-auth]'
+          "[data-auth]"
         )
         .forEach(x =>
           x.classList.toggle(
-            'active',
+            "active",
             x === btn
           )
         );
 
-      $('nameField')
+      $("nameField")
         ?.classList
         .toggle(
-          'hidden',
+          "hidden",
           authMode !==
-            'signup'
+            "signup"
         );
 
-      if ($('authTitle')) {
+      if ($("authTitle")) {
 
-        $('authTitle')
+        $("authTitle")
           .textContent =
-            authMode ===
-            'signup'
-
-              ? 'حساب خودت را بساز و دوستانت را اضافه کن.'
-
-              : 'همه‌چیز برای سفر و خرید، یک‌جا.';
+          authMode ===
+          "signup"
+            ? "حساب خودت را بساز و دوستانت را اضافه کن."
+            : "همه‌چیز برای سفر و خرید، یک‌جا.";
 
       }
 
-      if ($('authSubmit')) {
+      if ($("authSubmit")) {
 
-        $('authSubmit')
+        $("authSubmit")
           .innerHTML =
-            authMode ===
-            'signup'
-
-              ? 'ساخت حساب <span>←</span>'
-
-              : 'ورود به HesamList <span>←</span>';
+          authMode ===
+          "signup"
+            ? "ساخت حساب <span>←</span>"
+            : "ورود به HesamList <span>←</span>";
 
       }
 
-      if ($('password'))
-        $('password').value =
-          '';
+      if ($("password")) {
+        $("password").value =
+          "";
+      }
 
-      msg('');
+      msg("");
 
     };
 
@@ -2633,98 +2734,76 @@ document
    BUTTONS
 ========================================================= */
 
-$('newListBtn')
-  ?.addEventListener(
-    'click',
-    createList
-  );
+$("newListBtn") &&
+  ($("newListBtn").onclick =
+    createList);
 
-$('sidebarNew')
-  ?.addEventListener(
-    'click',
-    createList
-  );
+$("sidebarNew") &&
+  ($("sidebarNew").onclick =
+    createList);
 
-$('welcomeNew')
-  ?.addEventListener(
-    'click',
-    createList
-  );
+$("welcomeNew") &&
+  ($("welcomeNew").onclick =
+    createList);
 
-$('addItemBtn')
-  ?.addEventListener(
-    'click',
-    addItem
-  );
+$("addItemBtn") &&
+  ($("addItemBtn").onclick =
+    addItem);
 
-$('itemInput')
-  ?.addEventListener(
-    'keydown',
+$("itemInput") &&
+  ($("itemInput").onkeydown =
     e => {
 
       if (
         e.key ===
-        'Enter'
+        "Enter"
       ) {
         addItem();
       }
 
-    }
-  );
+    });
 
-$('membersBtn')
-  ?.addEventListener(
-    'click',
-    membersModal
-  );
+$("membersBtn") &&
+  ($("membersBtn").onclick =
+    membersModal);
 
-$('deleteListBtn')
-  ?.addEventListener(
-    'click',
-    deleteList
-  );
+$("deleteListBtn") &&
+  ($("deleteListBtn").onclick =
+    deleteList);
 
-$('adminBtn')
-  ?.addEventListener(
-    'click',
-    adminModal
-  );
+$("adminBtn") &&
+  ($("adminBtn").onclick =
+    adminModal);
 
-$('closeModal')
-  ?.addEventListener(
-    'click',
-    closeModal
-  );
+$("closeModal") &&
+  ($("closeModal").onclick =
+    closeModal);
 
-$('modal')
-  ?.addEventListener(
-    'click',
+$("modal") &&
+  ($("modal").onclick =
     e => {
 
       if (
         e.target ===
-        $('modal')
+        $("modal")
       ) {
         closeModal();
       }
 
-    }
-  );
+    });
 
-$('mobileMenu')
-  ?.addEventListener(
-    'click',
+$("mobileMenu") &&
+  ($("mobileMenu").onclick =
     () =>
-      $('sidebar')
+      $("sidebar")
         ?.classList
-        .toggle('open')
-  );
+        .toggle(
+          "open"
+        ));
 
-$('allListsBtn')
-  ?.addEventListener(
-    'click',
-    showDashboard
-  );
+$("allListsBtn") &&
+  ($("allListsBtn").onclick =
+    showDashboard);
 
 
 /* =========================================================
@@ -2733,7 +2812,7 @@ $('allListsBtn')
 
 document
   .querySelectorAll(
-    '.filter'
+    ".filter"
   )
   .forEach(btn => {
 
@@ -2744,11 +2823,11 @@ document
 
       document
         .querySelectorAll(
-          '.filter'
+          ".filter"
         )
         .forEach(x =>
           x.classList.toggle(
-            'active',
+            "active",
             x === btn
           )
         );
@@ -2761,26 +2840,57 @@ document
 
 
 /* =========================================================
+   OPTIONAL BUTTONS
+   فقط اگر توابعشان در پروژه وجود داشته باشند
+========================================================= */
+
+if (
+  typeof createGroup ===
+  "function"
+) {
+
+  $("newGroupBtn") &&
+    ($("newGroupBtn").onclick =
+      createGroup);
+
+  $("welcomeGroup") &&
+    ($("welcomeGroup").onclick =
+      createGroup);
+
+}
+
+if (
+  typeof groupsModal ===
+  "function"
+) {
+
+  $("dashboardGroupsBtn") &&
+    ($("dashboardGroupsBtn").onclick =
+      groupsModal);
+
+}
+
+if (
+  typeof changeListImage ===
+  "function"
+) {
+
+  $("changeListImageBtn") &&
+    ($("changeListImageBtn").onclick =
+      changeListImage);
+
+}
+
+
+/* =========================================================
    LOGOUT
 ========================================================= */
 
-$('logoutBtn')
-  ?.addEventListener(
-    'click',
+$("logoutBtn") &&
+  ($("logoutBtn").onclick =
     async () => {
 
       try {
-
-        if (channel) {
-
-          sb?.removeChannel(
-            channel
-          );
-
-          channel =
-            null;
-
-        }
 
         if (
           sb &&
@@ -2798,22 +2908,23 @@ $('logoutBtn')
       }
 
       localStorage.removeItem(
-        'hesamlist_session'
+        "hesamlist_session"
       );
 
       user = null;
+      profile = null;
       lists = [];
       active = null;
       items = [];
+      channel = null;
 
       showAuth();
 
       toast(
-        'از حساب خارج شدید'
+        "از حساب خارج شدید"
       );
 
-    }
-  );
+    });
 
 
 /* =========================================================
@@ -2836,14 +2947,15 @@ $('logoutBtn')
 
   } catch (e) {
 
-    console.error(e);
-
-    toast(
-      e.message ||
-      'خطا در اجرای برنامه'
+    console.error(
+      "BOOT ERROR:",
+      e
     );
 
-    showAuth();
+    msg(
+      e.message ||
+      "خطا در اجرای برنامه"
+    );
 
   }
 
