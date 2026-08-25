@@ -1,5 +1,102 @@
 const C=window.HESAMLIST_CONFIG||{};const hasCloud=()=>!!(C.supabaseUrl&&!C.supabaseUrl.includes('PASTE_')&&C.supabaseAnonKey&&!C.supabaseAnonKey.includes('PASTE_'));
 let sb=null,user=null,lists=[],active=null,items=[],filter='all',authMode='login',channel=null;
+/* =========================================================
+   USERNAME AUTH
+========================================================= */
+
+function internalEmail(username) {
+  return (
+    username
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, '') +
+    '@auth.hesamlist.local'
+  );
+}
+
+async function signup(username, password, name) {
+
+  const clean = username.trim().toLowerCase();
+
+  if (!/^[a-z0-9_]{3,30}$/.test(clean)) {
+    throw Error(
+      'نام کاربری باید ۳ تا ۳۰ کاراکتر و فقط شامل حروف انگلیسی، عدد و _ باشد.'
+    );
+  }
+
+  const email = internalEmail(clean);
+
+  const { data, error } =
+    await sb.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data: {
+          username: clean,
+          display_name: name || clean
+        }
+      }
+    });
+
+  if (error) throw error;
+
+  if (data.user) {
+
+    const { error: profileError } =
+      await sb
+        .from('profiles')
+        .upsert({
+          id: data.user.id,
+          username: clean,
+          display_name: name || clean
+        });
+
+    if (profileError) {
+      console.error(profileError);
+    }
+  }
+
+  return data;
+}
+
+
+async function login(username, password) {
+
+  const clean = username.trim().toLowerCase();
+
+  const { data, error } =
+    await sb.rpc(
+      'get_auth_email_by_username',
+      {
+        p_username: clean
+      }
+    );
+
+  if (error) throw error;
+
+  const email =
+    Array.isArray(data)
+      ? data[0]
+      : data;
+
+  if (!email) {
+    throw Error(
+      'نام کاربری یا رمز عبور اشتباه است.'
+    );
+  }
+
+  const result =
+    await sb.auth.signInWithPassword({
+      email: email,
+      password: password
+    });
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  return result;
+}
 const $=id=>document.getElementById(id);const esc=s=>String(s??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const iconFor=t=>t==='shopping'?'🛒':'✈️';const roleRank={viewer:1,editor:2,admin:3,owner:4};
 function toast(t){const x=$('toast');x.textContent=t;x.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>x.classList.remove('show'),2600)}
