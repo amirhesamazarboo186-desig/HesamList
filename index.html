@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-
 <meta name="theme-color" content="#111827">
-<meta name="description" content="HesamList — مدیریت لیست‌ها و گروه‌های مشترک">
+<meta name="description" content="HesamList — لیست‌های مشترک">
 <title>HesamList — لیست‌های مشترک</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -37,53 +36,67 @@
     </div>
 
     <div class="auth-copy">
-      <span class="eyebrow">HESAMLIST</span>
+      <span class="eyebrow">لیست مشترک شما</span>
 
       <h1 id="authTitle">
         همه‌چیز برای سفر و خرید، یک‌جا.
       </h1>
 
       <p>
-        لیست بساز، گروه تشکیل بده و با دوستانت همزمان کارها را مدیریت کن.
+        یک لیست بساز، دوستانت را اضافه کن و همه با هم
+        آن را کامل کنید.
       </p>
     </div>
 
     <div class="auth-tabs">
-      <button class="active" data-auth="login">ورود</button>
-      <button data-auth="signup">ثبت‌نام</button>
+      <button class="active" data-auth="login">
+        ورود
+      </button>
+
+      <button data-auth="signup">
+        ثبت‌نام
+      </button>
     </div>
 
     <form id="authForm">
 
-      <div id="nameField" class="field hidden">
-        <label>نام و نام خانوادگی</label>
-        <input
-          id="displayName"
-          autocomplete="name"
-          placeholder="مثلاً حسام آذربو"
-        >
-      </div>
-
+      <!-- نام کاربری -->
       <div class="field">
         <label>نام کاربری</label>
 
         <input
           id="username"
+          type="text"
           autocomplete="username"
           required
           minlength="3"
           maxlength="30"
-          pattern="[A-Za-z0-9_]+"
-          placeholder="مثلاً hesamazarboo"
+          placeholder="مثلاً hesam_azarboo"
         >
-
-        <small class="input-hint">
-          فقط حروف انگلیسی، عدد و _
-        </small>
       </div>
 
+      <!-- نام و نام خانوادگی -->
+      <div id="nameField" class="field hidden">
+
+        <label>
+          نام و نام خانوادگی
+        </label>
+
+        <input
+          id="displayName"
+          type="text"
+          autocomplete="name"
+          placeholder="مثلاً حسام آذربو"
+        >
+
+      </div>
+
+      <!-- رمز عبور -->
       <div class="field">
-        <label>رمز عبور</label>
+
+        <label>
+          رمز عبور
+        </label>
 
         <input
           id="password"
@@ -93,11 +106,15 @@
           required
           placeholder="حداقل ۶ کاراکتر"
         >
+
       </div>
 
-      <button class="btn primary wide" id="authSubmit">
-        ورود به HesamList
-        <span>←</span>
+      <button
+        class="btn primary wide"
+        id="authSubmit"
+        type="submit"
+      >
+        ورود به HesamList <span>←</span>
       </button>
 
     </form>
@@ -105,7 +122,7 @@
     <p id="authMessage" class="form-message"></p>
 
     <div class="auth-foot">
-      حساب کاربری امن، گروه‌های مشترک و همگام‌سازی بین دستگاه‌ها
+      حساب کاربری امن و همگام‌سازی اطلاعات بین دستگاه‌ها
     </div>
 
   </div>
@@ -121,36 +138,54 @@
 
   <div class="top-left">
 
-    <button id="mobileMenu" class="icon-btn mobile-only">
+    <button
+      id="mobileMenu"
+      class="icon-btn mobile-only"
+    >
       ☰
     </button>
 
     <div class="logo compact">
+
       <span>H</span>
 
       <div>
         <b>HesamList</b>
         <small>لیست‌های مشترک</small>
       </div>
+
     </div>
 
   </div>
 
+
   <div class="top-actions">
 
-    <button id="newGroupBtn" class="btn soft">
-      + <span class="desktop-only">گروه جدید</span>
+    <button
+      id="newGroupBtn"
+      class="btn soft"
+    >
+      👥 <span class="desktop-only">گروه جدید</span>
     </button>
 
-    <button id="newListBtn" class="btn primary">
+    <button
+      id="newListBtn"
+      class="btn primary"
+    >
       + <span class="desktop-only">لیست جدید</span>
     </button>
 
-    <button id="adminBtn" class="btn soft hidden">
+    <button
+      id="adminBtn"
+      class="btn soft hidden"
+    >
       مدیریت کاربران
     </button>
 
-    <button id="logoutBtn" class="btn ghost">
+    <button
+      id="logoutBtn"
+      class="btn ghost"
+    >
       خروج
     </button>
 
@@ -160,6 +195,7 @@
 
 
 <div class="app-grid">
+
 
 <!-- ================= SIDEBAR ================= -->
 
@@ -177,8 +213,8 @@
         کاربر
       </b>
 
-      <small id="userUsername">
-        @username
+      <small id="userEmail">
+        حساب کاربری
       </small>
 
     </div>
@@ -186,15 +222,22 @@
   </div>
 
 
-  <button id="allListsBtn" class="nav-head">
+  <button
+    id="allListsBtn"
+    class="nav-head"
+  >
     لیست‌های من
     <span id="listCount">0</span>
   </button>
 
+
   <nav id="listNav"></nav>
 
 
-  <button id="sidebarNew" class="new-list-link">
+  <button
+    id="sidebarNew"
+    class="new-list-link"
+  >
     ＋ ساخت لیست جدید
   </button>
 
@@ -228,6 +271,7 @@
 
 <main class="main">
 
+
 <!-- DASHBOARD -->
 
 <div id="dashboard" class="dashboard">
@@ -249,18 +293,25 @@
       </h1>
 
       <p>
-        گروه یا لیست جدید خودت را بساز و شروع کن.
+        برای شروع یک لیست خرید یا سفر بساز.
       </p>
 
     </div>
 
-    <div class="welcome-actions">
 
-      <button id="welcomeGroup" class="btn soft">
-        + ساخت گروه
+    <div class="top-actions">
+
+      <button
+        id="dashboardGroupsBtn"
+        class="btn soft"
+      >
+        👥 گروه‌های من
       </button>
 
-      <button id="welcomeNew" class="btn primary">
+      <button
+        id="welcomeNew"
+        class="btn primary"
+      >
         ساخت لیست جدید
       </button>
 
@@ -294,73 +345,47 @@
   </div>
 
 
-  <div class="section-title">
-
-    <div>
-      <h2>
-        گروه‌های شما
-      </h2>
-
-      <p>
-        گروه‌ها و لیست‌های مشترک
-      </p>
-    </div>
-
-    <button id="dashboardGroupsBtn" class="btn ghost">
-      مدیریت گروه‌ها
-    </button>
-
-  </div>
-
-
-  <div id="dashboardGroups" class="groups-grid"></div>
-
-
-  <div class="section-title lists-section-title">
-
-    <div>
-      <h2>
-        لیست‌های اخیر
-      </h2>
-
-      <p>
-        سریع به لیست‌های خود دسترسی پیدا کن
-      </p>
-    </div>
-
-  </div>
-
-
-  <div id="dashboardLists" class="dashboard-lists"></div>
+  <div
+    id="dashboardLists"
+    class="dashboard-lists"
+  ></div>
 
 </div>
 
 
 <!-- LIST VIEW -->
 
-<div id="listView" class="list-view hidden">
+<div
+  id="listView"
+  class="list-view hidden"
+>
 
-  <div class="list-cover">
 
-    <div id="listCoverImage" class="list-cover-image">
-      <span id="listCoverIcon">
-        ✈️
-      </span>
-    </div>
+  <div class="list-head">
 
-    <div class="list-cover-overlay"></div>
-
-    <div class="list-cover-content">
+    <div>
 
       <div class="crumb">
+
         لیست‌های من
+
         <span>›</span>
+
         <b id="listTypeLabel">
           سفر
         </b>
+
       </div>
 
+
       <div class="title-line">
+
+        <span
+          id="listIcon"
+          class="big-icon"
+        >
+          ✈️
+        </span>
 
         <div>
 
@@ -378,33 +403,33 @@
 
     </div>
 
-    <div class="cover-actions">
-
-      <button id="changeListImageBtn" class="btn cover-btn">
-        🖼️ عکس
-      </button>
-
-    </div>
-
-  </div>
-
-
-  <div class="list-head-actions">
 
     <div class="head-actions">
 
-      <button id="membersBtn" class="btn soft">
+      <button
+        id="membersBtn"
+        class="btn soft"
+      >
         👥
         <span class="desktop-only">
           اعضا و دسترسی
         </span>
       </button>
 
-      <button id="listSettingsBtn" class="btn ghost">
-        ⚙️
+
+      <button
+        id="changeListImageBtn"
+        class="icon-btn"
+        title="تغییر عکس لیست"
+      >
+        🖼️
       </button>
 
-      <button id="deleteListBtn" class="icon-btn danger">
+
+      <button
+        id="deleteListBtn"
+        class="icon-btn danger"
+      >
         🗑
       </button>
 
@@ -415,6 +440,7 @@
 
   <div class="list-card">
 
+
     <div class="add-box">
 
       <input
@@ -423,7 +449,10 @@
         autocomplete="off"
       >
 
-      <button id="addItemBtn" class="btn primary">
+      <button
+        id="addItemBtn"
+        class="btn primary"
+      >
         افزودن
       </button>
 
@@ -434,17 +463,28 @@
 
       <div class="filters">
 
-        <button class="filter active" data-filter="all">
+        <button
+          class="filter active"
+          data-filter="all"
+        >
           همه
           <span id="countAll">0</span>
         </button>
 
-        <button class="filter" data-filter="open">
+
+        <button
+          class="filter"
+          data-filter="open"
+        >
           باقی‌مانده
           <span id="countOpen">0</span>
         </button>
 
-        <button class="filter" data-filter="done">
+
+        <button
+          class="filter"
+          data-filter="done"
+        >
           انجام‌شده
           <span id="countDone">0</span>
         </button>
@@ -467,10 +507,16 @@
     </div>
 
 
-    <div id="items" class="items"></div>
+    <div
+      id="items"
+      class="items"
+    ></div>
 
 
-    <div id="listEmpty" class="empty-list hidden">
+    <div
+      id="listEmpty"
+      class="empty-list hidden"
+    >
 
       <div>
         ✓
@@ -490,6 +536,7 @@
 
 </div>
 
+
 </main>
 
 </div>
@@ -499,11 +546,17 @@
 
 <!-- ================= MODAL ================= -->
 
-<div id="modal" class="modal hidden">
+<div
+  id="modal"
+  class="modal hidden"
+>
 
   <div class="modal-card">
 
-    <button id="closeModal" class="modal-close">
+    <button
+      id="closeModal"
+      class="modal-close"
+    >
       ×
     </button>
 
