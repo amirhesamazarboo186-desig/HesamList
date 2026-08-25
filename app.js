@@ -16,6 +16,15 @@ function internalEmail(username) {
 
 async function signup(username, password, name) {
 
+ async function signup(username, password, name) {
+
+  if (!sb) {
+    sb = supabase.createClient(
+      C.supabaseUrl,
+      C.supabaseAnonKey
+    );
+  }
+
   const clean = username.trim().toLowerCase();
 
   if (!/^[a-z0-9_]{3,30}$/.test(clean)) {
@@ -34,6 +43,28 @@ async function signup(username, password, name) {
         data: {
           username: clean,
           display_name: name || clean
+        }
+      }
+    });
+
+  if (error) {
+    throw error;
+  }
+
+  if (data.user) {
+
+    await sb
+      .from('profiles')
+      .upsert({
+        id: data.user.id,
+        username: clean,
+        display_name: name || clean
+      });
+
+  }
+
+  return data;
+}
         }
       }
     });
